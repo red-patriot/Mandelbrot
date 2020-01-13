@@ -188,12 +188,20 @@ Mandelbrot::Color Mandelbrot::calculate_color(const unsigned int e) {
           static_cast<unsigned short>(5*e%255)};
 }
 
-double Mandelbrot::xtosdl(double x) {
+inline double Mandelbrot::xtosdl(double x) {
   return (window_width * x)/(plot_max.real() - plot_min.real())
     - (window_width*plot_min.real())/(plot_max.real() - plot_min.real());
 }
 
-double Mandelbrot::ytosdl(double y){
+inline double Mandelbrot::ytosdl(double y){
   return (window_height * y)/(plot_min.imag() - plot_max.imag())
     - (window_height*plot_max.imag())/(plot_min.imag() - plot_max.imag());
+}
+
+inline double Mandelbrot::sdltox(double sdlx) {
+  // TODO
+}
+
+inline double Mandelbrot::sdltoy(double sdly) {
+  // TODO
 }

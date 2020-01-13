@@ -71,8 +71,10 @@ private:
   Color calculate_color(const unsigned int escape_time);
 
   // Functions to convert screen to plot coordinates and vice versa
-  double xtosdl(double x);
-  double ytosdl(double y);
+  inline double xtosdl(double x);
+  inline double ytosdl(double y);
+  inline double sdltox(double sdlx);
+  inline double sdltoy(double sdly);
 };
 
 #endif
