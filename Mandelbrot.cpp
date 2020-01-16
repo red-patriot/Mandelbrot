@@ -1,5 +1,6 @@
 #include "Mandelbrot.h"
 #include <iostream>
+#include <iomanip>
 
 using std::complex;        using std::pair;
 
@@ -10,9 +11,9 @@ Mandelbrot::Mandelbrot(int escape_limit) :
   escape_time_limit(escape_limit),
   gathering_new_limits(false) { }
 
-bool Mandelbrot::init(std::complex<double> max, std::complex<double> min,
-                      double step, int width, int height) {
-  /* Initialize nexeccary subsystems. */
+bool Mandelbrot::init(std::complex<long double> max, std::complex<long double> min,
+                      int width, int height) {
+  /* Initialize necessary subsystems. */
   // Initialize SDL systems and objects
   if (SDL_Init(SDL_INIT_VIDEO) != 0) {
     SDL_Log("Failed to initialize SDL: %s", SDL_GetError());
@@ -35,10 +36,12 @@ bool Mandelbrot::init(std::complex<double> max, std::complex<double> min,
     return false;
   }
 
-  // intialize internal values
+  // set plot limits
   plot_max = max;
   plot_min = min;
-  plot_resolution = step;
+
+  // plot step depends on the
+  plot_resolution = determine_resolution();
 
   generate_points();
   std::cout << points.size() << '\n';
@@ -85,6 +88,7 @@ void Mandelbrot::update_plot() {
 void Mandelbrot::generate_output() {
   /* Generate the display. */
   if (state == NeedsToDraw) {
+    std::cout << "start_go\n";
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
 
@@ -95,6 +99,7 @@ void Mandelbrot::generate_output() {
     SDL_RenderPresent(renderer);
     
     state = Running;
+    std::cout << "generate_output\n";
   }
 }
 
@@ -102,61 +107,99 @@ void Mandelbrot::handle_mouse_click(const SDL_Event& event) {
   /* Respond to a mouse click. */
   switch (event.button.button) {
   case SDL_BUTTON_LEFT:
-    int x, y;
-    SDL_GetMouseState(&x, &y);
-    std::cout << x << ' ' << y << '\n';
-    /*if (!gathering_new_limits) {
-      new_limit_1.real(x);
-      new_limit_1.imag(y);
-      gathering_new_limits = true;
-    } else {
-      new_limit_2.real(x);
-      new_limit_2.imag(y);
-      gathering_new_limits = false;
-
-      // Set the new plot limits and generate new points
-      
-      }*/
+    gather_new_limits();
     break;
   case SDL_BUTTON_RIGHT:
+    // TODO: Make this button cancel setting the new limits
     break;
   case SDL_BUTTON_MIDDLE:
     break;
   }
 }
 
+void Mandelbrot::gather_new_limits() {
+  int x, y;
+  SDL_GetMouseState(&x, &y);
+  if (!gathering_new_limits) {
+    new_limit_1.real(sdltox(x));
+    new_limit_1.imag(sdltoy(y));
+    gathering_new_limits = true;
+    std::cout << "true\n";
+  } else {
+    new_limit_2.real(sdltox(x));
+    new_limit_2.imag(sdltoy(y));
+    gathering_new_limits = false;
+    std::cout << "false\n";
+
+    set_plot_limits(new_limit_1, new_limit_2);
+  }
+}
+
+void Mandelbrot::set_plot_limits(std::complex<long double> first,
+                                 std::complex<long double> second) {
+  /* Set new plot limits from two points defining the new bounding rectangle.
+   * The new points don't have to be ordered, so maxs and mins are determined.
+   */
+  plot_max.real(std::max(first.real(), second.real()));
+  plot_max.imag(std::max(first.imag(), second.imag()));
+  plot_min.real(std::min(first.real(), second.real()));
+  plot_min.imag(std::min(first.imag(), second.imag()));
+
+  // set a new plot resolution
+  reset_plot_resolution();
+}
+
+void Mandelbrot::reset_plot_resolution() {
+  /* Set a new plot resolution and ready the plot for recalculation. */
+  long double new_plot_resolution = determine_resolution();
+  points.clear();
+  state = NeedsToGeneratePoints;
+  escape_time_limit *= 2;
+  plot_resolution = new_plot_resolution;
+}
+
+long double Mandelbrot::determine_resolution() {
+  /* Determine the plot resolution based on the window and plot dimensions. */
+  return std::min((plot_max.real() - plot_min.real())/window_width,
+                  (plot_max.imag() - plot_min.imag())/window_height);
+}
+
 void Mandelbrot::generate_points() {
   /* Generate a vector of points for the calculation. */
   if (state == NeedsToGeneratePoints) {
-    for (double r = plot_min.real(); r <= plot_max.real(); r += plot_resolution) {
-      for (double i = plot_min.imag(); i <= plot_max.imag(); i += plot_resolution) {
-        complex<double> c{r, i};
-        points.push_back(pair<complex<double>, unsigned int>(c, 0));
+    std::cout << "start_gp\n";
+    for (long double r = plot_min.real(); r <= plot_max.real(); r += plot_resolution) {
+      for (long double i = plot_min.imag(); i <= plot_max.imag(); i += plot_resolution) {
+        complex<long double> c{r, i};
+        points.push_back(pair<complex<long double>, unsigned int>(c, 0));
       }
     }
     state = NeedsToCalculateEscape;
+    std::cout << "generate_points\n";
   }
 }
 
 void Mandelbrot::calculate_escape_times() {
   /* Calculate the escape time for each point. */
   if (state == NeedsToCalculateEscape) {
+    std::cout << "start_cet\n";
     for (auto& point : points) {
       point.second = iterate_point(point.first);
     }
     state = NeedsToDraw;
+    std::cout << "calculate_escape_times\n";
   }
 }
 
-unsigned int Mandelbrot::iterate_point(const std::complex<double>& c) {
+unsigned int Mandelbrot::iterate_point(const std::complex<long double>& c) {
   /* Iterate over a single point to determine how long it takes to excape. */
-  complex<double> _c{c.real(), c.imag()};
-  complex<double> z{0.0, 0.0};
+  complex<long double> _c{c.real(), c.imag()};
+  complex<long double> z{0.0, 0.0};
   unsigned int count = 1;
 
   // check if the point is within the cardiod or period-2 bulb first
-  double x{c.real()}, y{c.imag()};
-  double q = (x-.25)*(x-.25) + y*y;
+  long double x{c.real()}, y{c.imag()};
+  long double q = (x-.25)*(x-.25) + y*y;
   if ((q*(q + (x-.25))) <= (.25*y*y) || ((x+1)*(x+1) + y*y) <= .0625) {
     return 0;
   }
@@ -172,7 +215,7 @@ unsigned int Mandelbrot::iterate_point(const std::complex<double>& c) {
   return count == escape_time_limit ? 0 : count;
 }
 
-void Mandelbrot::render_point(std::pair<std::complex<double>, unsigned int> point) {
+void Mandelbrot::render_point(std::pair<std::complex<long double>, unsigned int> point) {
   /* Render a point on the plot. */
   Color c = calculate_color(point.second);
   SDL_SetRenderDrawColor(renderer, c.r, c.g, c.b, 255);
@@ -188,12 +231,22 @@ Mandelbrot::Color Mandelbrot::calculate_color(const unsigned int e) {
           static_cast<unsigned short>(5*e%255)};
 }
 
-double Mandelbrot::xtosdl(double x) {
+inline long double Mandelbrot::xtosdl(long double x) {
   return (window_width * x)/(plot_max.real() - plot_min.real())
     - (window_width*plot_min.real())/(plot_max.real() - plot_min.real());
 }
 
-double Mandelbrot::ytosdl(double y){
+inline long double Mandelbrot::ytosdl(long double y){
   return (window_height * y)/(plot_min.imag() - plot_max.imag())
     - (window_height*plot_max.imag())/(plot_min.imag() - plot_max.imag());
+}
+
+inline long double Mandelbrot::sdltox(long double sdlx) {
+  return ((plot_max.real() - plot_min.real())*sdlx)/(window_width)
+    + plot_min.real();
+}
+
+inline long double Mandelbrot::sdltoy(long double sdly) {
+  return ((plot_min.imag() - plot_max.imag())*sdly)/(window_height)
+    + plot_max.imag();
 }

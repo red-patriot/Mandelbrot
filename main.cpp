@@ -15,6 +15,6 @@ int main() {
 
 
 /*
- * TODO: Calculate a translation from SDL to plot coordinates
- * TODO: Make plot zoomable
+ * TODO: Add logging/progress bars for plot calculation
+ * TODO: Add smooth coloring
  */
