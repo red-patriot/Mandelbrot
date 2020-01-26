@@ -58,7 +58,7 @@ void Mandelbrot::run_plot() {
 }
 
 void Mandelbrot::handle_input() {
-/* Process user input. */
+  /* Process user input. */
   SDL_Event event;
 
   while (SDL_PollEvent(&event)) {
@@ -124,14 +124,14 @@ void Mandelbrot::gather_new_limits() {
     new_limit_1.real(sdltox(x));
     new_limit_1.imag(sdltoy(y));
     gathering_new_limits = true;
-    std::cout << "true\n";
   } else {
     new_limit_2.real(sdltox(x));
     new_limit_2.imag(sdltoy(y));
     gathering_new_limits = false;
-    std::cout << "false\n";
 
+    alert_new_limits();    
     set_plot_limits(new_limit_1, new_limit_2);
+    reset_plot_resolution();
   }
 }
 
@@ -144,9 +144,6 @@ void Mandelbrot::set_plot_limits(std::complex<long double> first,
   plot_max.imag(std::max(first.imag(), second.imag()));
   plot_min.real(std::min(first.real(), second.real()));
   plot_min.imag(std::min(first.imag(), second.imag()));
-
-  // set a new plot resolution
-  reset_plot_resolution();
 }
 
 void Mandelbrot::reset_plot_resolution() {
@@ -226,9 +223,23 @@ void Mandelbrot::render_point(std::pair<std::complex<long double>, unsigned int>
 Mandelbrot::Color Mandelbrot::calculate_color(const unsigned int e) {
   /* Calculate the color of a point based on its escape_time. */
   return e == 0 ? Color(0,0,0) :
-    Color{static_cast<unsigned short>((e > 100 ? 7*e : 0)%255),
-          static_cast<unsigned short>((e > 50 ? 4*e : 0)%255),
-          static_cast<unsigned short>(5*e%255)};
+    Color{static_cast<unsigned short>((e > 200 ? 10*e : 0)%255),
+          static_cast<unsigned short>((e > 100 ? 14*e : 0)%255),
+          static_cast<unsigned short>(7*e%255)};
+}
+
+void Mandelbrot::alert_new_limits() {
+  /* Draw a rectangle at the new limits to show them. */
+  // TODO: Finish this
+  SDL_Rect new_plot_area;
+  new_plot_area.x = xtosdl(std::min(new_limit_1.real(), new_limit_2.real()));
+  new_plot_area.y = ytosdl(std::max(new_limit_1.imag(), new_limit_2.imag()));
+  new_plot_area.w = fabs(xtosdl(new_limit_1.real()) - xtosdl(new_limit_2.real()));
+  new_plot_area.h = fabs(ytosdl(new_limit_1.imag()) - ytosdl(new_limit_2.imag()));
+
+  SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+  SDL_RenderDrawRect(renderer, &new_plot_area);
+  SDL_RenderPresent(renderer);
 }
 
 inline long double Mandelbrot::xtosdl(long double x) {

@@ -73,6 +73,7 @@ private:
   // drawing functions
   void render_point(std::pair<std::complex<long double>, unsigned int> point);
   Color calculate_color(const unsigned int escape_time);
+  void alert_new_limits();
 
   // Functions to convert screen to plot coordinates and vice versa
   inline long double xtosdl(long double x);
