@@ -39,6 +39,8 @@ private:
   std::complex<double> plot_max;
   std::complex<double> plot_min;
   double plot_resolution;
+  int x_err;
+  int y_err;
 
   std::vector<std::pair<std::complex<double>, unsigned int> > points;
   unsigned int escape_time_limit;

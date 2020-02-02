@@ -10,6 +10,8 @@ Mandelbrot::Mandelbrot(int escape_limit) :
   window(nullptr),
   renderer(nullptr),
   state(NeedsToGeneratePoints),
+  x_err(0),
+  y_err(0),
   escape_time_limit(escape_limit),
   gathering_new_limits(false) { }
 
@@ -233,7 +235,6 @@ Mandelbrot::Color Mandelbrot::calculate_color(const unsigned int e) {
 
 void Mandelbrot::alert_new_limits() {
   /* Draw a rectangle at the new limits to show them. */
-  // TODO: Finish this
   SDL_Rect new_plot_area;
   new_plot_area.x = xtosdl(std::min(new_limit_1.real(), new_limit_2.real()));
   new_plot_area.y = ytosdl(std::max(new_limit_1.imag(), new_limit_2.imag()));
@@ -246,25 +247,21 @@ void Mandelbrot::alert_new_limits() {
 }
 
 inline double Mandelbrot::xtosdl(double x) {
-  double m = (window_width)/(plot_max.real() - plot_min.real());
-  return m * x
-    - (window_width*plot_min.real())/(plot_max.real() - plot_min.real());
+  double m = (window_width - 2*x_err)/(plot_max.real() - plot_min.real());
+  return m*x - m*plot_min.real() + x_err;
 }
 
 inline double Mandelbrot::ytosdl(double y){
-  double m = (window_height)/(plot_min.imag() - plot_max.imag());
-  return m * y
-    - (window_height*plot_max.imag())/(plot_min.imag() - plot_max.imag());
+  double m = (window_height - 2*y_err)/(plot_min.imag() - plot_max.imag());
+  return m*y -m*plot_max.imag() + y_err;
 }
 
 inline double Mandelbrot::sdltox(double sdlx) {
-  double m = (plot_max.real() - plot_min.real())/(window_width);
-  return m * sdlx
-    + plot_min.real();
+  double m = (plot_max.real() - plot_min.real())/(window_width - 2*x_err);
+  return m*sdlx - m*x_err + plot_min.real();
 }
 
 inline double Mandelbrot::sdltoy(double sdly) {
-  double m = (plot_min.imag() - plot_max.imag())/(window_height);
-  return m * sdly
-    + plot_max.imag();
+  double m = (plot_min.imag() - plot_max.imag())/(window_height - 2*y_err);
+  return m*sdly - m*y_err + plot_max.imag();
 }
