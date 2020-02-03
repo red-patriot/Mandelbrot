@@ -43,6 +43,7 @@ bool Mandelbrot::init(std::complex<double> max, std::complex<double> min,
   // set plot limits
   plot_max = max;
   plot_min = min;
+  set_new_errors();
 
   // plot step depends on the
   plot_resolution = determine_resolution();
@@ -114,7 +115,7 @@ void Mandelbrot::handle_mouse_click(const SDL_Event& event) {
     gather_new_limits();
     break;
   case SDL_BUTTON_RIGHT:
-    // TODO: Make this button cancel setting the new limits
+    gathering_new_limits = false;
     break;
   case SDL_BUTTON_MIDDLE:
     break;
@@ -122,6 +123,7 @@ void Mandelbrot::handle_mouse_click(const SDL_Event& event) {
 }
 
 void Mandelbrot::gather_new_limits() {
+  /* Gather new plot limits. */
   int x, y;
   SDL_GetMouseState(&x, &y);
   if (!gathering_new_limits) {
@@ -133,9 +135,31 @@ void Mandelbrot::gather_new_limits() {
     new_limit_2.imag(sdltoy(y));
     gathering_new_limits = false;
 
-    alert_new_limits();    
+    alert_new_limits();
     set_plot_limits(new_limit_1, new_limit_2);
+    set_new_errors();
     reset_plot_resolution();
+  }
+}
+
+void Mandelbrot::set_new_errors(){
+  /* Set new error values in the x and y directions. */
+  x_err = 0;
+  y_err = 0;
+  // determine which direction needs new limits set
+  if ((plot_max.real() - plot_min.real())/window_width >
+      (plot_max.imag() - plot_min.imag())/window_height) {
+    // x_err = 0
+    double y_scale = (plot_max.imag() - plot_min.imag())/window_height
+      * (window_width/(plot_max.real() - plot_min.real()));
+    y_err = (window_height - y_scale*ytosdl(plot_min.imag()))/2;
+    std::cout << "y_scale = " << y_scale << "y_err = " << y_err << '\n';
+  } else {
+    // y_err = 0;
+    double x_scale = (plot_max.real() - plot_min.real())/window_width
+      * (window_height/(plot_max.imag() - plot_min.imag()));
+    x_err = (window_width - x_scale*xtosdl(plot_max.real()))/2;
+    std::cout << "x_scale = " << x_scale << "\nx_err = " << x_err << '\n';
   }
 }
 
@@ -227,10 +251,10 @@ void Mandelbrot::render_point(std::pair<std::complex<double>, unsigned int> poin
 
 Mandelbrot::Color Mandelbrot::calculate_color(const unsigned int e) {
   /* Calculate the color of a point based on its escape_time. */
-  return e == 0 ? Color(0,0,0) : Color(175, 175, 175);
-  /*    Color{static_cast<unsigned short>((e > 200 ? 10*e : 0)%255),
+  return e == 0 ? Color(0,0,0) : 
+    Color{static_cast<unsigned short>((e > 200 ? 10*e : 0)%255),
           static_cast<unsigned short>((e > 100 ? 14*e : 0)%255),
-          static_cast<unsigned short>(7*e%255)};*/
+          static_cast<unsigned short>(7*e%255)};
 }
 
 void Mandelbrot::alert_new_limits() {

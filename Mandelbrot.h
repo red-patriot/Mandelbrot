@@ -59,6 +59,7 @@ private:
 
   // plot management functions
   void gather_new_limits();
+  void set_new_errors();
   void set_plot_limits(std::complex<double> first, std::complex<double> second);
   void reset_plot_resolution();
   double determine_resolution();
