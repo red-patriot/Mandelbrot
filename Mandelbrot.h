@@ -12,10 +12,10 @@
 
 class Mandelbrot {
 public:
-  Mandelbrot(int escape_limit=500);
+  Mandelbrot(int escape_limit=1000);
   ~Mandelbrot() = default;
 
-  bool init(std::complex<long double> max, std::complex<long double> min,
+  bool init(std::complex<double> max, std::complex<double> min,
             int width=2800, int height=1860);
 
   void run_plot();
@@ -36,16 +36,18 @@ private:
 
   State state;
   
-  std::complex<long double> plot_max;
-  std::complex<long double> plot_min;
-  long double plot_resolution;
+  std::complex<double> plot_max;
+  std::complex<double> plot_min;
+  double plot_resolution;
+  int x_err;
+  int y_err;
 
-  std::vector<std::pair<std::complex<long double>, unsigned int> > points;
+  std::vector<std::pair<std::complex<double>, unsigned int> > points;
   unsigned int escape_time_limit;
 
   bool gathering_new_limits;
-  std::complex<long double> new_limit_1;
-  std::complex<long double> new_limit_2;
+  std::complex<double> new_limit_1;
+  std::complex<double> new_limit_2;
 
   // run_plot helpers
   void handle_input();
@@ -57,12 +59,13 @@ private:
 
   // plot management functions
   void gather_new_limits();
-  void set_plot_limits(std::complex<long double> first, std::complex<long double> second);
+  void set_new_errors();
+  void set_plot_limits(std::complex<double> first, std::complex<double> second);
   void reset_plot_resolution();
-  long double determine_resolution();
+  double determine_resolution();
   void generate_points();
   void calculate_escape_times();
-  unsigned int iterate_point(const std::complex<long double>& c);
+  unsigned int iterate_point(const std::complex<double>& c);
 
   // struct to represent an RGB color triple
   struct Color{
@@ -71,15 +74,15 @@ private:
   };
   
   // drawing functions
-  void render_point(std::pair<std::complex<long double>, unsigned int> point);
+  void render_point(std::pair<std::complex<double>, unsigned int> point);
   Color calculate_color(const unsigned int escape_time);
   void alert_new_limits();
 
   // Functions to convert screen to plot coordinates and vice versa
-  inline long double xtosdl(long double x);
-  inline long double ytosdl(long double y);
-  inline long double sdltox(long double sdlx);
-  inline long double sdltoy(long double sdly);
+  inline double xtosdl(double x);
+  inline double ytosdl(double y);
+  inline double sdltox(double sdlx);
+  inline double sdltoy(double sdly);
 };
 
 #endif
